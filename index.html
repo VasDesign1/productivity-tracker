@@ -927,7 +927,7 @@
 
         async function updateInSharePoint(issueId, updates) {
             try {
-                const index = issues.findIndex(i => i.id === issueId);
+                const index = issues.findIndex(i => String(i.id) === String(issueId));
                 if (index !== -1) {
                     Object.assign(issues[index], updates);
                 }
@@ -948,7 +948,7 @@
                 await fetch(`${GOOGLE_SHEETS_API}?action=delete&id=${issueId}`, {
                     method: 'POST'
                 });
-                issues = issues.filter(i => i.id !== issueId);
+                issues = issues.filter(i => String(i.id) !== String(issueId));
             } catch (error) {
                 console.error('Google Sheets delete error:', error);
                 showNotification('Error deleting data. Check console for details.', 'error');
@@ -1874,7 +1874,7 @@
             tbody.innerHTML = sorted.map(issue => {
                 const isUnresolved = issue.resolved === 'No';
                 const rowClass = isUnresolved ? 'clickable-row' : '';
-                const statusClick = isUnresolved ? `onclick="toggleResolutionForm(${issue.id})"` : '';
+                const statusClick = isUnresolved ? `onclick="toggleResolutionForm('${issue.id}')"` : '';
 
                 // Get department from concern for records that don't have it set correctly
                 const dept = issue.department && issue.department !== 'Sales/Warehouse/Sheetmetal'
@@ -1896,7 +1896,7 @@
                             <span class="status-${issue.resolved.toLowerCase()}" ${statusClick}>${issue.resolved}</span>
                             ${issue.resolutionComment ? `<div class="resolution-comment">Resolved: ${issue.resolutionComment}</div>` : ''}
                         </td>
-                        <td><button class="btn btn-danger btn-sm" onclick="deleteRecord(${issue.id})">Delete</button></td>
+                        <td><button class="btn btn-danger btn-sm" onclick="deleteRecord('${issue.id}')">Delete</button></td>
                     </tr>
                 `;
 
@@ -1904,14 +1904,14 @@
                 if (isUnresolved) {
                     html += `
                         <tr id="resolution-row-${issue.id}" class="resolution-row" style="display: none;">
-                            <td colspan="9">
+                            <td colspan="10">
                                 <div class="resolution-form show">
                                     <label style="font-weight: 600; color: var(--dark-teal); margin-bottom: 8px; display: block;">Resolution Comment:</label>
                                     <div class="resolution-form-content">
                                         <div class="form-group">
-                                            <textarea id="resolution-comment-${issue.id}" placeholder="Enter resolution comment..." oninput="validateResolutionForm(${issue.id})"></textarea>
+                                            <textarea id="resolution-comment-${issue.id}" placeholder="Enter resolution comment..." oninput="validateResolutionForm('${issue.id}')"></textarea>
                                         </div>
-                                        <button class="tick-btn" id="tick-btn-${issue.id}" onclick="resolveIssue(${issue.id})" disabled title="Mark as Resolved">&#10003;</button>
+                                        <button class="tick-btn" id="tick-btn-${issue.id}" onclick="resolveIssue('${issue.id}')" disabled title="Mark as Resolved">&#10003;</button>
                                     </div>
                                 </div>
                             </td>
