@@ -2040,8 +2040,22 @@
             const password = prompt('Enter password to clear all records:');
             if (password === null) return;
             if (password !== DELETE_PASSWORD) { alert('Incorrect password.'); return; }
-            if (confirm('Delete ALL records? This cannot be undone.')) {
+            if (confirm('Delete ALL records? This cannot be undone.\n\nA backup will be downloaded automatically before clearing.')) {
                 try {
+                    // Auto-download backup before clearing
+                    if (issues.length > 0) {
+                        const backupData = {
+                            exportDate: new Date().toISOString(),
+                            recordCount: issues.length,
+                            backupReason: 'Pre-clear emergency backup',
+                            data: issues
+                        };
+                        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `productivity-backup-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                    }
                     showLoadingIndicator(true);
                     await clearAllFromSharePoint();
                     showLoadingIndicator(false);
