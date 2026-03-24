@@ -2103,7 +2103,7 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
                     const importedData = imported.data || imported;
@@ -2119,9 +2119,12 @@
                         `Click Cancel to REPLACE all existing data.`
                     );
 
+                    showLoadingIndicator(true);
+
                     if (action) {
                         // Merge: add only records that don't exist (by salesOrder + date + department)
                         let added = 0;
+                        const newItems = [];
                         importedData.forEach(item => {
                             const exists = issues.some(i =>
                                 i.salesOrder === item.salesOrder &&
@@ -2131,24 +2134,51 @@
                             );
                             if (!exists) {
                                 item.id = item.id || Date.now() + Math.random();
-                                issues.push(item);
+                                newItems.push(item);
                                 added++;
                             }
                         });
+                        // Save each new record to Google Sheets
+                        for (const item of newItems) {
+                            try {
+                                const response = await fetch(GOOGLE_SHEETS_API + '?action=create', {
+                                    method: 'POST',
+                                    body: JSON.stringify(item)
+                                });
+                                const savedItem = await response.json();
+                                item.id = savedItem.id || item.id;
+                            } catch (err) {
+                                console.error('Error saving imported record:', err);
+                            }
+                            issues.push(item);
+                        }
                         showNotification(`Merged ${added} new records (${importedData.length - added} duplicates skipped)`, 'success');
                     } else {
-                        // Replace all data
-                        issues = importedData.map(item => ({
-                            ...item,
-                            id: item.id || Date.now() + Math.random()
-                        }));
+                        // Replace all data: clear Google Sheets first, then save all imported records
+                        await clearAllFromSharePoint();
+                        issues = [];
+                        for (const item of importedData) {
+                            item.id = item.id || Date.now() + Math.random();
+                            try {
+                                const response = await fetch(GOOGLE_SHEETS_API + '?action=create', {
+                                    method: 'POST',
+                                    body: JSON.stringify(item)
+                                });
+                                const savedItem = await response.json();
+                                item.id = savedItem.id || item.id;
+                            } catch (err) {
+                                console.error('Error saving imported record:', err);
+                            }
+                            issues.push(item);
+                        }
                         showNotification(`Replaced all data with ${issues.length} imported records`, 'success');
                     }
 
-                    localStorage.setItem('productivityIssues', JSON.stringify(issues));
+                    showLoadingIndicator(false);
                     renderRecords();
                     updateAnalytics();
                 } catch (err) {
+                    showLoadingIndicator(false);
                     alert('Error importing file: ' + err.message);
                 }
             };
