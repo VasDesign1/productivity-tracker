@@ -2120,11 +2120,11 @@
                     );
 
                     showLoadingIndicator(true);
+                    let recordsToSave = [];
 
                     if (action) {
                         // Merge: add only records that don't exist (by salesOrder + date + department)
                         let added = 0;
-                        const newItems = [];
                         importedData.forEach(item => {
                             const exists = issues.some(i =>
                                 i.salesOrder === item.salesOrder &&
@@ -2134,49 +2134,50 @@
                             );
                             if (!exists) {
                                 item.id = item.id || Date.now() + Math.random();
-                                newItems.push(item);
+                                recordsToSave.push(item);
                                 added++;
                             }
                         });
-                        // Save each new record to Google Sheets
-                        for (const item of newItems) {
-                            try {
-                                const response = await fetch(GOOGLE_SHEETS_API + '?action=create', {
-                                    method: 'POST',
-                                    body: JSON.stringify(item)
-                                });
-                                const savedItem = await response.json();
-                                item.id = savedItem.id || item.id;
-                            } catch (err) {
-                                console.error('Error saving imported record:', err);
-                            }
-                            issues.push(item);
-                        }
-                        showNotification(`Merged ${added} new records (${importedData.length - added} duplicates skipped)`, 'success');
+                        showNotification(`Merging ${added} new records (${importedData.length - added} duplicates skipped)...`, 'success');
                     } else {
-                        // Replace all data: clear Google Sheets first, then save all imported records
+                        // Replace all data - clear server first
                         await clearAllFromSharePoint();
+                        recordsToSave = importedData.map(item => ({
+                            ...item,
+                            id: item.id || Date.now() + Math.random()
+                        }));
                         issues = [];
-                        for (const item of importedData) {
-                            item.id = item.id || Date.now() + Math.random();
-                            try {
-                                const response = await fetch(GOOGLE_SHEETS_API + '?action=create', {
-                                    method: 'POST',
-                                    body: JSON.stringify(item)
-                                });
-                                const savedItem = await response.json();
-                                item.id = savedItem.id || item.id;
-                            } catch (err) {
-                                console.error('Error saving imported record:', err);
-                            }
+                    }
+
+                    // Save each new record to Google Sheets
+                    let saved = 0;
+                    let failed = 0;
+                    for (const item of recordsToSave) {
+                        try {
+                            const response = await fetch(GOOGLE_SHEETS_API + '?action=create', {
+                                method: 'POST',
+                                body: JSON.stringify(item)
+                            });
+                            const savedItem = await response.json();
+                            item.id = savedItem.id || item.id;
                             issues.push(item);
+                            saved++;
+                        } catch (err) {
+                            console.error('Failed to save imported record:', err);
+                            failed++;
                         }
-                        showNotification(`Replaced all data with ${issues.length} imported records`, 'success');
                     }
 
                     showLoadingIndicator(false);
+                    localStorage.setItem('productivityIssues', JSON.stringify(issues));
                     renderRecords();
                     updateAnalytics();
+
+                    if (failed > 0) {
+                        showNotification(`Imported ${saved} records to server (${failed} failed). Check console for details.`, 'error');
+                    } else {
+                        showNotification(`Successfully imported ${saved} records to server`, 'success');
+                    }
                 } catch (err) {
                     showLoadingIndicator(false);
                     alert('Error importing file: ' + err.message);
