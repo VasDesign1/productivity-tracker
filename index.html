@@ -999,43 +999,53 @@
             <p style="color: #666; font-size: 13px; margin-bottom: 15px;"><em>Click on any chart to view detailed issue information including resolution comments.</em></p>
 
             <div class="charts-grid">
-                <div class="chart-container" onclick="showIssuesPopup('department')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('department')"></div>
                     <h3>Issues by Department (Click for details)</h3>
                     <canvas id="departmentChart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('responsible')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('responsible')"></div>
                     <h3>Issues by 1st Responsible User (Click for details)</h3>
                     <canvas id="responsibleUserChart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('responsible2')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('responsible2')"></div>
                     <h3>Issues by 2nd Responsible User (Click for details)</h3>
                     <canvas id="responsibleUser2Chart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('loggedby')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('loggedby')"></div>
                     <h3>Issues by Logged By (Click for details)</h3>
                     <canvas id="loggedByChart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('concern')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('concern')"></div>
                     <h3>Issues by Concern Type (Click for details)</h3>
                     <canvas id="concernChart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('timeline')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('timeline')"></div>
                     <h3>Issues Over Time (Click for details)</h3>
                     <canvas id="timelineChart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('resolution')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('resolution')"></div>
                     <h3>Current Resolution Status (Click for details)</h3>
                     <canvas id="resolutionChart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('initial-resolution')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('initial-resolution')"></div>
                     <h3>Initial Resolution Status (As Logged) (Click for details)</h3>
                     <canvas id="initialResolutionChart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('resolved-via-comment')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('resolved-via-comment')"></div>
                     <h3>Resolved via Comments (Later Resolution) (Click for details)</h3>
                     <canvas id="resolvedViaCommentChart"></canvas>
                 </div>
-                <div class="chart-container" onclick="showIssuesPopup('customer')">
+                <div class="chart-container">
+                    <div class="chart-click-overlay" onclick="showIssuesPopup('customer')"></div>
                     <h3>Issues by Customer (Click for details)</h3>
                     <canvas id="customerChart"></canvas>
                 </div>
