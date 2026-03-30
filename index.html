@@ -794,9 +794,9 @@
                     <h3 id="resolution-rate">0%</h3>
                     <p>Resolution Rate</p>
                 </div>
-                <div class="stat-card gold">
+                <div class="stat-card gold" onclick="showIssuesPopup('customers-affected')">
                     <h3 id="unique-customers">0</h3>
-                    <p>Customers Affected</p>
+                    <p>Customers Affected (Click to view)</p>
                 </div>
             </div>
 
@@ -2585,6 +2585,7 @@
                             `⏰ Pending Action: ${stillUnresolved} issues still need attention`
                         ];
                     case 'customer':
+                    case 'customers-affected':
                         return [
                             `🏪 Top Customer 1: <strong>${topCustomers[0] ? topCustomers[0][0].substring(0, 35) : 'N/A'}</strong> (${topCustomers[0] ? topCustomers[0][1] : 0} issues)`,
                             `🏪 Top Customer 2: <strong>${topCustomers[1] ? topCustomers[1][0].substring(0, 35) : 'N/A'}</strong> (${topCustomers[1] ? topCustomers[1][1] : 0} issues)`,
@@ -2645,6 +2646,9 @@
                     break;
                 case 'customer':
                     title = 'Issues by Customer';
+                    break;
+                case 'customers-affected':
+                    title = 'Customers Affected';
                     break;
             }
 
@@ -2723,7 +2727,49 @@
                     </div>
                 `}).join('');
 
-                modalBody.innerHTML = insightsHTML + issuesHTML;
+                if (type === 'customers-affected') {
+                    // Group issues by customer
+                    const custGroups = {};
+                    filteredIssues.forEach(issue => {
+                        const key = issue.customerNumber + ' - ' + (issue.customerName || 'Unknown');
+                        if (!custGroups[key]) custGroups[key] = [];
+                        custGroups[key].push(issue);
+                    });
+                    // Sort by issue count descending
+                    const sortedCustomers = Object.entries(custGroups).sort((a, b) => b[1].length - a[1].length);
+
+                    const customerListHTML = sortedCustomers.map(([customer, custIssues]) => {
+                        const resolvedCount = custIssues.filter(i => i.resolved === 'Yes').length;
+                        const unresolvedCount = custIssues.length - resolvedCount;
+                        const dates = custIssues.map(i => formatDate(i.date)).join(', ');
+                        const concerns = custIssues.map(i => i.concern);
+                        const uniqueConcerns = [...new Set(concerns)];
+
+                        return `
+                        <div style="background: var(--light-gray); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid ${unresolvedCount > 0 ? 'var(--gold-accent)' : '#28a745'};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="font-size: 14px; color: var(--dark-teal);">${customer}</strong>
+                                <span style="background: var(--dark-teal); color: white; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">${custIssues.length} issue${custIssues.length > 1 ? 's' : ''}</span>
+                            </div>
+                            <div style="font-size: 12px; color: #555; margin-bottom: 5px;">
+                                <span style="color: #155724;">Resolved: ${resolvedCount}</span> | <span style="color: #721c24;">Unresolved: ${unresolvedCount}</span>
+                            </div>
+                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
+                                <strong>Dates:</strong> ${dates}
+                            </div>
+                            <div style="font-size: 11px; color: #888;">
+                                <strong>Concerns:</strong> ${uniqueConcerns.join(', ')}
+                            </div>
+                        </div>`;
+                    }).join('');
+
+                    modalBody.innerHTML = insightsHTML +
+                        `<h4 style="color: #13614F; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #E8A83E;">
+                            🏪 All Customers (${sortedCustomers.length} customers, ${filteredIssues.length} total issues)
+                        </h4>` + customerListHTML;
+                } else {
+                    modalBody.innerHTML = insightsHTML + issuesHTML;
+                }
             }
 
             modal.classList.add('show');
