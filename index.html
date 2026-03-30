@@ -263,7 +263,17 @@
         }
 
         .chart-container canvas {
-            pointer-events: none;
+            pointer-events: none !important;
+        }
+
+        .chart-click-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+            cursor: pointer;
         }
 
         .chart-container:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); }
@@ -2916,49 +2926,49 @@
             charts.department = new Chart(document.getElementById('departmentChart'), {
                 type: 'bar',
                 data: { labels: ['Sales', 'Warehouse', 'Sheetmetal'], datasets: [{ label: 'Issues', data: [0, 0, 0], backgroundColor: ['#1565c0', '#e65100', '#7b1fa2'] }] },
-                options: { responsive: true, plugins: { legend: { display: false } } }
+                options: { responsive: true, events: [], plugins: { legend: { display: false } } }
             });
 
             charts.responsibleUser = new Chart(document.getElementById('responsibleUserChart'), {
                 type: 'bar',
                 data: { labels: [], datasets: [{ label: 'Issues', data: [], backgroundColor: colors.gold }] },
-                options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+                options: { responsive: true, events: [], indexAxis: 'y', plugins: { legend: { display: false } } }
             });
 
             charts.responsibleUser2 = new Chart(document.getElementById('responsibleUser2Chart'), {
                 type: 'bar',
                 data: { labels: [], datasets: [{ label: 'Issues', data: [], backgroundColor: colors.primary }] },
-                options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+                options: { responsive: true, events: [], indexAxis: 'y', plugins: { legend: { display: false } } }
             });
 
             charts.loggedBy = new Chart(document.getElementById('loggedByChart'), {
                 type: 'bar',
                 data: { labels: [], datasets: [{ label: 'Issues', data: [], backgroundColor: colors.dark }] },
-                options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+                options: { responsive: true, events: [], indexAxis: 'y', plugins: { legend: { display: false } } }
             });
 
             charts.concern = new Chart(document.getElementById('concernChart'), {
                 type: 'doughnut',
                 data: { labels: [], datasets: [{ data: [], backgroundColor: [colors.primary, colors.dark, colors.gold, colors.goldLight, '#a0d4cf', '#2196F3', '#9C27B0', '#FF5722', '#4CAF50', '#795548'] }] },
-                options: { responsive: true }
+                options: { responsive: true, events: [] }
             });
 
             charts.timeline = new Chart(document.getElementById('timelineChart'), {
                 type: 'line',
                 data: { labels: [], datasets: [{ label: 'Issues', data: [], borderColor: colors.primary, backgroundColor: 'rgba(23,120,107,0.1)', fill: true, tension: 0.4 }] },
-                options: { responsive: true }
+                options: { responsive: true, events: [] }
             });
 
             charts.resolution = new Chart(document.getElementById('resolutionChart'), {
                 type: 'pie',
                 data: { labels: ['Resolved', 'Unresolved'], datasets: [{ data: [0, 0], backgroundColor: [colors.primary, colors.gold] }] },
-                options: { responsive: true }
+                options: { responsive: true, events: [] }
             });
 
             charts.initialResolution = new Chart(document.getElementById('initialResolutionChart'), {
                 type: 'pie',
                 data: { labels: ['Logged as Resolved', 'Logged as Unresolved'], datasets: [{ data: [0, 0], backgroundColor: ['#2196F3', '#FF5722'] }] },
-                options: { responsive: true }
+                options: { responsive: true, events: [] }
             });
 
             charts.resolvedViaComment = new Chart(document.getElementById('resolvedViaCommentChart'), {
@@ -2971,13 +2981,13 @@
                         backgroundColor: ['#2196F3', colors.primary, colors.gold]
                     }]
                 },
-                options: { responsive: true, plugins: { legend: { display: false } } }
+                options: { responsive: true, events: [], plugins: { legend: { display: false } } }
             });
 
             charts.customer = new Chart(document.getElementById('customerChart'), {
                 type: 'bar',
                 data: { labels: [], datasets: [{ label: 'Issues', data: [], backgroundColor: colors.gold }] },
-                options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+                options: { responsive: true, events: [], indexAxis: 'y', plugins: { legend: { display: false } } }
             });
         }
 
