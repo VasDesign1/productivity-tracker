@@ -259,6 +259,11 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
             cursor: pointer;
             transition: box-shadow 0.2s;
+            position: relative;
+        }
+
+        .chart-container canvas {
+            pointer-events: none;
         }
 
         .chart-container:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); }
@@ -3295,7 +3300,15 @@
                 return;
             }
 
-            const updates = {
+            // Find the existing issue to preserve all fields
+            const issue = issues.find(i => String(i.id) === String(issueId));
+            if (!issue) {
+                alert('Issue not found.');
+                return;
+            }
+
+            // Build full record with all existing fields, overriding only edited ones
+            const updates = Object.assign({}, issue, {
                 date: document.getElementById('edit-date').value,
                 salesOrder: document.getElementById('edit-sales-order').value,
                 customerNumber: document.getElementById('edit-customer-number').value,
@@ -3308,14 +3321,13 @@
                 department: getDepartmentFromConcern(document.getElementById('edit-concern').value),
                 resolved: resolved,
                 resolutionComment: document.getElementById('edit-resolution-comment').value
-            };
+            });
 
             // Set resolvedAt if being resolved now
-            const issue = issues.find(i => String(i.id) === String(issueId));
-            if (resolved === 'Yes' && issue && issue.resolved === 'No') {
+            if (resolved === 'Yes' && issue.resolved === 'No') {
                 updates.resolvedAt = new Date().toISOString();
             } else if (resolved === 'No') {
-                updates.resolvedAt = null;
+                updates.resolvedAt = '';
             }
 
             try {
