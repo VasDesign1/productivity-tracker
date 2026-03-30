@@ -701,10 +701,10 @@
                         <button class="admin-lock-btn" id="admin-lock-btn" onclick="toggleAdminMode()" title="Admin">&#128274;</button>
                         <button class="btn btn-primary btn-sm" onclick="refreshData()" style="background: var(--primary-teal);">Refresh</button>
                         <button class="btn btn-secondary btn-sm" onclick="exportData()">Export CSV</button>
-                        <button class="btn btn-secondary btn-sm" onclick="exportJSON()" style="background: #6c757d;">Export JSON</button>
-                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file').click()" style="background: #17a2b8;">Import JSON</button>
+                        <button class="btn btn-secondary btn-sm admin-only" onclick="exportJSON()" style="background: #6c757d; display: none;">Export JSON</button>
+                        <button class="btn btn-secondary btn-sm admin-only" onclick="document.getElementById('import-file').click()" style="background: #17a2b8; display: none;">Import JSON</button>
                         <input type="file" id="import-file" accept=".json" onchange="importJSON(event)" style="display: none;">
-                        <button class="btn btn-danger btn-sm" onclick="clearAllData()">Clear All</button>
+                        <button class="btn btn-danger btn-sm admin-only" onclick="clearAllData()" style="display: none;">Clear All</button>
                     </div>
                 </div>
                 <div class="filter-section">
@@ -761,7 +761,7 @@
                                 <th onclick="sortRecords('responsibleUser2')">2nd Responsible <span class="sort-arrow" id="sort-responsibleUser2"></span></th>
                                 <th onclick="sortRecords('concern')">Concern <span class="sort-arrow" id="sort-concern"></span></th>
                                 <th onclick="sortRecords('resolved')">Resolved <span class="sort-arrow" id="sort-resolved"></span></th>
-                                <th>Actions</th>
+                                <th id="actions-column-header" style="display: none;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="records-body"></tbody>
@@ -2004,7 +2004,7 @@
                             <span class="status-${issue.resolved.toLowerCase()}" ${statusClick}>${issue.resolved}</span>
                             ${issue.resolutionComment ? `<div class="resolution-comment">Resolved: ${issue.resolutionComment}</div>` : ''}
                         </td>
-                        <td>${typeof isAdminMode!=='undefined'&&isAdminMode?`<button class="btn-edit" onclick="event.stopPropagation();openEditModal('${issue.id}')">Edit</button>`:''}<button class="btn btn-danger btn-sm" onclick="deleteRecord('${issue.id}')">Delete</button></td>
+                        ${typeof isAdminMode!=='undefined'&&isAdminMode?`<td><button class="btn-edit" onclick="event.stopPropagation();openEditModal('${issue.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteRecord('${issue.id}')">Delete</button></td>`:''}
                     </tr>
                 `;
 
@@ -3129,12 +3129,20 @@
     // Admin Mode — separate script block, does not modify any existing code
     var isAdminMode = false;
 
+    function setAdminVisibility(show) {
+        var display = show ? '' : 'none';
+        document.querySelectorAll('.admin-only').forEach(function(el){ el.style.display = display; });
+        var actionsHeader = document.getElementById('actions-column-header');
+        if (actionsHeader) actionsHeader.style.display = show ? '' : 'none';
+    }
+
     function toggleAdminMode() {
         if (isAdminMode) {
             isAdminMode = false;
             document.getElementById('admin-lock-btn').innerHTML = '&#128274;';
             document.getElementById('admin-lock-btn').classList.remove('unlocked');
             document.getElementById('admin-badge').classList.remove('show');
+            setAdminVisibility(false);
             filterRecords();
             showNotification('Admin mode locked.', 'info');
         } else {
@@ -3152,6 +3160,7 @@
             document.getElementById('admin-lock-btn').innerHTML = '&#128275;';
             document.getElementById('admin-lock-btn').classList.add('unlocked');
             document.getElementById('admin-badge').classList.add('show');
+            setAdminVisibility(true);
             filterRecords();
             showNotification('Admin mode enabled. You can now edit records.', 'success');
         } else {
