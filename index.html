@@ -3060,7 +3060,15 @@
         if (!issue) return;
 
         document.getElementById('edit-issue-id').value = issueId;
-        document.getElementById('edit-date').value = issue.date || '';
+        // Parse date into YYYY-MM-DD format for the date input
+        var dateVal = '';
+        if (issue.date) {
+            var d = new Date(issue.date);
+            if (!isNaN(d.getTime())) {
+                dateVal = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+            }
+        }
+        document.getElementById('edit-date').value = dateVal;
         document.getElementById('edit-sales-order').value = issue.salesOrder || '';
         document.getElementById('edit-customer-number').value = issue.customerNumber || '';
         document.getElementById('edit-customer-name').value = issue.customerName || '';
