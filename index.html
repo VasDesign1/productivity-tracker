@@ -2122,9 +2122,14 @@
             }
             emptyState.style.display = 'none';
 
-            const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sorted = [...data].sort((a, b) => {
+                const dateA = a.date ? new Date(a.date) : new Date(0);
+                const dateB = b.date ? new Date(b.date) : new Date(0);
+                return dateB - dateA;
+            });
             tbody.innerHTML = sorted.map(issue => {
-                const isUnresolved = issue.resolved === 'No';
+                const resolvedStatus = issue.resolved || 'No';
+                const isUnresolved = resolvedStatus === 'No';
                 const rowClass = isUnresolved ? 'clickable-row' : '';
                 const statusClick = isUnresolved ? `onclick="toggleResolutionForm('${issue.id}')"` : '';
 
@@ -2145,8 +2150,8 @@
                         <td>${issue.responsibleUser2 === 'Staff Member Unknown At This Stage' ? '<span style="color: #cc6600; font-style: italic; font-weight: 600;">Unknown</span>' : (issue.responsibleUser2 || '-')}</td>
                         <td>${issue.concern}</td>
                         <td>
-                            <span class="status-${issue.resolved.toLowerCase()}" ${statusClick}>${issue.resolved}</span>
-                            ${issue.resolutionComment ? `<div class="resolution-comment">${issue.resolved === 'Yes' ? 'Resolved' : 'Comment'}: ${issue.resolutionComment}</div>` : ''}
+                            <span class="status-${resolvedStatus.toLowerCase()}" ${statusClick}>${resolvedStatus}</span>
+                            ${issue.resolutionComment ? `<div class="resolution-comment">${resolvedStatus === 'Yes' ? 'Resolved' : 'Comment'}: ${issue.resolutionComment}</div>` : ''}
                         </td>
                         <td>
                             ${isAdminMode ? `<button class="btn-edit" onclick="event.stopPropagation(); openEditModal('${issue.id}')">Edit</button> ` : ''}
@@ -2554,7 +2559,10 @@
         }
 
         function formatDate(dateStr) {
-            return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '-';
+            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         }
 
         // Modal Functions
@@ -2844,10 +2852,10 @@
                     const modalDeptClass = modalDept.toLowerCase();
 
                     return `
-                    <div class="modal-issue-item ${issue.resolved === 'Yes' ? 'resolved' : ''}">
+                    <div class="modal-issue-item ${(issue.resolved || 'No') === 'Yes' ? 'resolved' : ''}">
                         <div class="modal-issue-header">
                             <span class="dept-badge dept-${modalDeptClass}">${modalDept}</span>
-                            <span class="status-${issue.resolved.toLowerCase()}">${issue.resolved}</span>
+                            <span class="status-${(issue.resolved || 'No').toLowerCase()}">${issue.resolved || 'No'}</span>
                             ${resolutionBadge}
                         </div>
                         <div class="modal-issue-details">
