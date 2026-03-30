@@ -343,6 +343,28 @@
             transform: scale(1.1);
         }
 
+        .save-comment-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            background-color: var(--primary-teal);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .save-comment-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .save-comment-btn:not(:disabled):hover {
+            background-color: var(--dark-teal);
+        }
+
         .resolution-comment {
             font-size: 12px;
             color: #666;
@@ -1935,7 +1957,7 @@
                         <td>${issue.concern}</td>
                         <td>
                             <span class="status-${issue.resolved.toLowerCase()}" ${statusClick}>${issue.resolved}</span>
-                            ${issue.resolutionComment ? `<div class="resolution-comment">Resolved: ${issue.resolutionComment}</div>` : ''}
+                            ${issue.resolutionComment ? `<div class="resolution-comment">${issue.resolved === 'Yes' ? 'Resolved' : 'Comment'}: ${issue.resolutionComment}</div>` : ''}
                         </td>
                         <td><button class="btn btn-danger btn-sm" onclick="deleteRecord('${issue.id}')">Delete</button></td>
                     </tr>
@@ -1979,14 +2001,15 @@
                         <tr id="resolution-row-${issue.id}" class="resolution-row" style="display: none;">
                             <td colspan="10">
                                 <div class="resolution-form show">
-                                    ${hasAnyUnknown ? '<div style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; padding: 15px; margin-bottom: 12px;"><p style="font-weight: 600; color: #e65100; margin-bottom: 10px;">This issue has unknown staff member(s). Please assign the responsible person(s) before resolving.</p>' + responsiblePersonFields + '</div>' : ''}
-                                    <label style="font-weight: 600; color: var(--dark-teal); margin-bottom: 8px; display: block;">Resolution Comment:</label>
+                                    <label style="font-weight: 600; color: var(--dark-teal); margin-bottom: 8px; display: block;">Comment:</label>
                                     <div class="resolution-form-content">
                                         <div class="form-group">
-                                            <textarea id="resolution-comment-${issue.id}" placeholder="Enter resolution comment..." oninput="validateResolutionForm('${issue.id}')"></textarea>
+                                            <textarea id="resolution-comment-${issue.id}" placeholder="Enter comment..." oninput="validateResolutionForm('${issue.id}')">${issue.resolutionComment || ''}</textarea>
                                         </div>
+                                        ${hasAnyUnknown ? `<button class="save-comment-btn" id="save-comment-btn-${issue.id}" onclick="saveCommentOnly('${issue.id}')" disabled title="Save Comment">Save Comment</button>` : ''}
                                         <button class="tick-btn" id="tick-btn-${issue.id}" onclick="resolveIssue('${issue.id}')" disabled title="Mark as Resolved">&#10003;</button>
                                     </div>
+                                    ${hasAnyUnknown ? '<div style="background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; padding: 15px; margin-top: 12px;"><p style="font-weight: 600; color: #e65100; margin-bottom: 10px;">To fully resolve this issue, assign the responsible person(s) below:</p>' + responsiblePersonFields + '</div>' : ''}
                                 </div>
                             </td>
                         </tr>
@@ -2020,16 +2043,23 @@
         function validateResolutionForm(issueId) {
             const comment = document.getElementById(`resolution-comment-${issueId}`).value.trim();
             const tickBtn = document.getElementById(`tick-btn-${issueId}`);
+            const saveCommentBtn = document.getElementById(`save-comment-btn-${issueId}`);
 
-            let valid = comment.length > 0;
+            const hasComment = comment.length > 0;
 
-            // Check if responsible person dropdowns exist (unknown staff) and are filled
+            // Enable "Save Comment" button if there's a comment (no need for responsible persons)
+            if (saveCommentBtn) {
+                saveCommentBtn.disabled = !hasComment;
+            }
+
+            // Resolve button requires comment AND all responsible persons assigned
+            let canResolve = hasComment;
             const resp1Select = document.getElementById(`resolve-responsible-1-${issueId}`);
             const resp2Select = document.getElementById(`resolve-responsible-2-${issueId}`);
-            if (resp1Select && !resp1Select.value) valid = false;
-            if (resp2Select && !resp2Select.value) valid = false;
+            if (resp1Select && !resp1Select.value) canResolve = false;
+            if (resp2Select && !resp2Select.value) canResolve = false;
 
-            tickBtn.disabled = !valid;
+            tickBtn.disabled = !canResolve;
         }
 
         async function resolveIssue(issueId) {
@@ -2078,6 +2108,29 @@
                 showNotification('Issue resolved successfully!', 'info');
             } catch (error) {
                 alert('Error resolving issue. Please try again.');
+            }
+        }
+
+        async function saveCommentOnly(issueId) {
+            const comment = document.getElementById(`resolution-comment-${issueId}`).value.trim();
+
+            if (!comment) {
+                alert('Please enter a comment.');
+                return;
+            }
+
+            try {
+                const updates = {
+                    resolutionComment: comment
+                };
+
+                await updateInSharePoint(issueId, updates);
+
+                currentExpandedIssueId = null;
+                filterRecords();
+                showNotification('Comment saved. Issue remains unresolved until responsible person(s) are assigned.', 'info');
+            } catch (error) {
+                alert('Error saving comment. Please try again.');
             }
         }
 
