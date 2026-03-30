@@ -3081,8 +3081,8 @@
         var opts2 = '<option value="">None</option>' + userIds.map(function(u){ return '<option value="'+u+'">'+u+'</option>'; }).join('');
 
         document.getElementById('edit-logged-by').innerHTML = opts;
-        document.getElementById('edit-responsible-user').innerHTML = opts + unknownOpt;
-        document.getElementById('edit-responsible-user-2').innerHTML = opts2 + unknownOpt;
+        document.getElementById('edit-responsible-user').innerHTML = '<option value="">Select User</option>' + unknownOpt + userIds.map(function(u){ return '<option value="'+u+'">'+u+'</option>'; }).join('');
+        document.getElementById('edit-responsible-user-2').innerHTML = '<option value="">None</option>' + unknownOpt + userIds.map(function(u){ return '<option value="'+u+'">'+u+'</option>'; }).join('');
 
         document.getElementById('edit-logged-by').value = issue.loggedBy || issue.userId || '';
         document.getElementById('edit-responsible-user').value = issue.responsibleUser || '';
