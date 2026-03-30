@@ -3149,7 +3149,15 @@
         if (newCustNum !== (issue.customerNumber||'')) updates.customerNumber = newCustNum;
         if (newCustName !== (issue.customerName||'')) updates.customerName = newCustName;
         if (newLoggedBy !== (issue.loggedBy||issue.userId||'')) updates.loggedBy = newLoggedBy;
-        if (responsibleUser !== (issue.responsibleUser||'')) { updates.responsibleUser = responsibleUser; updates.userId = responsibleUser; }
+        else if (newLoggedBy) updates.loggedBy = newLoggedBy;
+        if (responsibleUser !== (issue.responsibleUser||'')) {
+            updates.responsibleUser = responsibleUser;
+            updates.userId = responsibleUser;
+            // Preserve loggedBy if it was relying on userId fallback
+            if (!issue.loggedBy && issue.userId) {
+                updates.loggedBy = issue.userId;
+            }
+        }
         if (newResp2 !== (issue.responsibleUser2||'')) updates.responsibleUser2 = newResp2;
         if (newConcern !== (issue.concern||'')) { updates.concern = newConcern; updates.department = getDepartmentFromConcern(newConcern); }
         if (newComment !== (issue.resolutionComment||'')) updates.resolutionComment = newComment;
