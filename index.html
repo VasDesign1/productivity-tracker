@@ -2952,11 +2952,11 @@
                     </div>
                     <div class="form-group">
                         <label>1st Responsible Person</label>
-                        <select id="edit-responsible-user"></select>
+                        <select id="edit-responsible-user" onchange="onEditResponsibleChange()"></select>
                     </div>
                     <div class="form-group">
                         <label>2nd Responsible Person</label>
-                        <select id="edit-responsible-user-2"></select>
+                        <select id="edit-responsible-user-2" onchange="onEditResponsibleChange()"></select>
                     </div>
                     <div class="form-group">
                         <label>Concern</label>
@@ -3068,17 +3068,19 @@
         document.getElementById('edit-resolution-comment').value = issue.resolutionComment || '';
         document.getElementById('edit-concern').value = issue.concern || '';
 
+        var unknownOpt = '<option value="Staff Member Unknown At This Stage" style="font-style:italic;color:#cc6600;">Staff Member Unknown At This Stage</option>';
         var opts = '<option value="">Select User</option>' + userIds.map(function(u){ return '<option value="'+u+'">'+u+'</option>'; }).join('');
         var opts2 = '<option value="">None</option>' + userIds.map(function(u){ return '<option value="'+u+'">'+u+'</option>'; }).join('');
 
         document.getElementById('edit-logged-by').innerHTML = opts;
-        document.getElementById('edit-responsible-user').innerHTML = opts;
-        document.getElementById('edit-responsible-user-2').innerHTML = opts2;
+        document.getElementById('edit-responsible-user').innerHTML = opts + unknownOpt;
+        document.getElementById('edit-responsible-user-2').innerHTML = opts2 + unknownOpt;
 
         document.getElementById('edit-logged-by').value = issue.loggedBy || issue.userId || '';
         document.getElementById('edit-responsible-user').value = issue.responsibleUser || '';
         document.getElementById('edit-responsible-user-2').value = issue.responsibleUser2 || '';
 
+        onEditResponsibleChange();
         document.getElementById('edit-modal-overlay').classList.add('show');
     }
 
@@ -3086,9 +3088,33 @@
         document.getElementById('edit-modal-overlay').classList.remove('show');
     }
 
+    function onEditResponsibleChange() {
+        var UNKNOWN = 'Staff Member Unknown At This Stage';
+        var resp1 = document.getElementById('edit-responsible-user').value;
+        var resp2 = document.getElementById('edit-responsible-user-2').value;
+        var resolvedSelect = document.getElementById('edit-resolved');
+        if (resp1 === UNKNOWN || resp2 === UNKNOWN) {
+            resolvedSelect.value = 'No';
+            resolvedSelect.disabled = true;
+            resolvedSelect.title = 'Cannot mark as resolved while responsible person is unknown';
+        } else {
+            resolvedSelect.disabled = false;
+            resolvedSelect.title = '';
+        }
+    }
+
     async function saveEditedRecord() {
         var issueId = document.getElementById('edit-issue-id').value;
         var responsibleUser = document.getElementById('edit-responsible-user').value;
+        var resp2Val = document.getElementById('edit-responsible-user-2').value;
+        var UNKNOWN = 'Staff Member Unknown At This Stage';
+
+        // Force unresolved if unknown staff
+        if (responsibleUser === UNKNOWN || resp2Val === UNKNOWN) {
+            document.getElementById('edit-resolved').value = 'No';
+        }
+        // Re-enable select in case it was disabled, so we can read the value
+        document.getElementById('edit-resolved').disabled = false;
         var resolved = document.getElementById('edit-resolved').value;
 
         if (!responsibleUser) {
