@@ -458,7 +458,7 @@
         .calendar-legend-swatch { width: 16px; height: 16px; border-radius: 3px; border: 1px solid #ddd; display: inline-block; vertical-align: middle; margin-right: 4px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .calendar-day-header { text-align: center; font-weight: 600; font-size: 11px; color: var(--dark-teal); padding: 6px 0; }
-        .calendar-day { aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; border: 1px solid #eee; position: relative; }
+        .calendar-day { border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; border: 1px solid #eee; position: relative; padding: 8px 4px; }
         .calendar-day:hover { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1; }
         .calendar-day.empty { background: transparent; border: none; cursor: default; }
         .calendar-day.empty:hover { transform: none; box-shadow: none; }
@@ -478,7 +478,13 @@
         .calendar-mini-day { aspect-ratio: 1; border-radius: 2px; cursor: pointer; font-size: 8px; display: flex; align-items: center; justify-content: center; }
         .calendar-mini-day.empty { background: transparent; cursor: default; }
         .calendar-mini-day:hover:not(.empty) { outline: 1px solid var(--dark-teal); }
-        .calendar-weekly .calendar-day { aspect-ratio: auto; padding: 12px 8px; min-height: 70px; }
+        .calendar-mini-day.green { background-color: #c8e6c9; color: #2e7d32; }
+        .calendar-mini-day.yellow { background-color: #fff9c4; color: #f57f17; }
+        .calendar-mini-day.orange { background-color: #ffe0b2; color: #e65100; }
+        .calendar-mini-day.red { background-color: #ffcdd2; color: #c62828; }
+        .calendar-mini-day.future { background-color: #f5f5f5; color: #bbb; cursor: default; }
+        .calendar-mini-day.today { outline: 2px solid var(--primary-teal); }
+        .calendar-weekly .calendar-day { padding: 20px 8px; min-height: 80px; }
         .calendar-streak { margin-top: 12px; font-size: 13px; color: #555; padding: 10px 15px; background: var(--light-gray); border-radius: 8px; }
 
         @media (max-width: 768px) {
@@ -867,8 +873,9 @@
                         <label>User</label>
                         <select id="analytics-user" onchange="updateAnalytics()"></select>
                     </div>
-                    <div class="form-group" style="justify-content: flex-end;">
-                        <button class="btn btn-primary btn-sm" onclick="openCalendarModal()" style="background: var(--gold-accent); white-space: nowrap; margin-top: 18px;">&#128197; Issue Calendar</button>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button onclick="openCalendarModal()" style="padding: 12px 15px; border: 2px solid var(--gold-accent); border-radius: 8px; font-size: 14px; font-family: inherit; background: var(--gold-accent); color: white; cursor: pointer; font-weight: 600; white-space: nowrap; transition: all 0.3s ease;">&#128197; Issue Calendar</button>
                     </div>
                 </div>
             </div>
@@ -937,12 +944,12 @@
 
     <!-- Calendar Modal -->
     <div class="modal-overlay" id="calendar-modal" onclick="if(event.target===this)closeCalendarModal()">
-        <div class="modal" style="max-width: 950px;">
-            <div class="modal-header" style="background: linear-gradient(135deg, var(--gold-accent), #d4922e);">
-                <h2>&#128197; Issue Calendar</h2>
+        <div class="modal" style="max-width: 950px; max-height: 92vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--gold-accent), #d4922e); padding: 12px 20px; flex-shrink: 0;">
+                <h2 style="font-size: 17px;">&#128197; Issue Calendar</h2>
                 <div class="calendar-controls" style="gap: 6px;">
                     <button class="btn btn-sm" onclick="calendarPrev()" style="padding: 5px 10px; background: rgba(255,255,255,0.2); color: white; border: none;">&larr;</button>
-                    <span id="calendar-label" style="font-weight: 600; min-width: 160px; text-align: center; display: inline-block; color: white;"></span>
+                    <span id="calendar-label" style="font-weight: 600; min-width: 160px; text-align: center; display: inline-block; color: white; font-size: 14px;"></span>
                     <button class="btn btn-sm" onclick="calendarNext()" style="padding: 5px 10px; background: rgba(255,255,255,0.2); color: white; border: none;">&rarr;</button>
                     <select id="calendar-view" onchange="renderCalendar()" style="margin-left: 10px; padding: 5px 8px; border: none; border-radius: 4px; font-size: 12px;">
                         <option value="monthly" selected>Monthly</option>
@@ -952,10 +959,10 @@
                     <button class="modal-close" onclick="closeCalendarModal()">&times;</button>
                 </div>
             </div>
-            <div class="modal-body" style="padding: 20px; max-height: 70vh;">
-                <div id="calendar-legend" class="calendar-legend"></div>
-                <div id="calendar-body"></div>
-                <div id="calendar-streak" class="calendar-streak"></div>
+            <div style="padding: 15px 20px; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+                <div id="calendar-legend" class="calendar-legend" style="flex-shrink: 0; margin-bottom: 10px;"></div>
+                <div id="calendar-body" style="flex: 1; overflow: hidden;"></div>
+                <div id="calendar-streak" class="calendar-streak" style="flex-shrink: 0; margin-top: 10px;"></div>
             </div>
         </div>
     </div>
