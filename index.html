@@ -867,6 +867,9 @@
                         <label>User</label>
                         <select id="analytics-user" onchange="updateAnalytics()"></select>
                     </div>
+                    <div class="form-group" style="justify-content: flex-end;">
+                        <button class="btn btn-primary btn-sm" onclick="openCalendarModal()" style="background: var(--gold-accent); white-space: nowrap; margin-top: 18px;">&#128197; Issue Calendar</button>
+                    </div>
                 </div>
             </div>
 
@@ -915,25 +918,7 @@
                 </div>
             </div>
 
-            <!-- Issue Calendar Heatmap -->
-            <div class="card" style="margin-top: 25px;">
-                <div class="card-header">
-                    <h2>Issue Calendar</h2>
-                    <div class="calendar-controls">
-                        <button class="btn btn-sm btn-secondary" onclick="calendarPrev()" style="padding: 6px 12px;">&larr;</button>
-                        <span id="calendar-label" style="font-weight: 600; min-width: 180px; text-align: center; display: inline-block;"></span>
-                        <button class="btn btn-sm btn-secondary" onclick="calendarNext()" style="padding: 6px 12px;">&rarr;</button>
-                        <select id="calendar-view" onchange="renderCalendar()" style="margin-left: 15px; padding: 6px 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 13px;">
-                            <option value="monthly" selected>Monthly</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="calendar-legend" class="calendar-legend"></div>
-                <div id="calendar-body"></div>
-                <div id="calendar-streak" class="calendar-streak"></div>
-            </div>
+            <!-- Calendar is in a modal, opened via button in filters -->
         </div>
     </div>
 
@@ -946,6 +931,31 @@
             </div>
             <div class="modal-body" id="modal-body">
                 <!-- Content will be dynamically inserted -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div class="modal-overlay" id="calendar-modal" onclick="if(event.target===this)closeCalendarModal()">
+        <div class="modal" style="max-width: 950px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--gold-accent), #d4922e);">
+                <h2>&#128197; Issue Calendar</h2>
+                <div class="calendar-controls" style="gap: 6px;">
+                    <button class="btn btn-sm" onclick="calendarPrev()" style="padding: 5px 10px; background: rgba(255,255,255,0.2); color: white; border: none;">&larr;</button>
+                    <span id="calendar-label" style="font-weight: 600; min-width: 160px; text-align: center; display: inline-block; color: white;"></span>
+                    <button class="btn btn-sm" onclick="calendarNext()" style="padding: 5px 10px; background: rgba(255,255,255,0.2); color: white; border: none;">&rarr;</button>
+                    <select id="calendar-view" onchange="renderCalendar()" style="margin-left: 10px; padding: 5px 8px; border: none; border-radius: 4px; font-size: 12px;">
+                        <option value="monthly" selected>Monthly</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                    <button class="modal-close" onclick="closeCalendarModal()">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" style="padding: 20px; max-height: 70vh;">
+                <div id="calendar-legend" class="calendar-legend"></div>
+                <div id="calendar-body"></div>
+                <div id="calendar-streak" class="calendar-streak"></div>
             </div>
         </div>
     </div>
@@ -3326,6 +3336,7 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeModal();
+                if (typeof closeCalendarModal === 'function') closeCalendarModal();
             }
         });
     </script>
@@ -3526,6 +3537,15 @@
 
     function closeEditModal() {
         document.getElementById('edit-modal-overlay').classList.remove('show');
+    }
+
+    function openCalendarModal() {
+        document.getElementById('calendar-modal').classList.add('show');
+        renderCalendar();
+    }
+
+    function closeCalendarModal() {
+        document.getElementById('calendar-modal').classList.remove('show');
     }
 
     function onEditResponsibleChange() {
