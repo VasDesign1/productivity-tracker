@@ -452,6 +452,35 @@
         .clickable-row { cursor: pointer; }
         .clickable-row:hover { background-color: #fff3cd !important; }
 
+        /* Calendar Heatmap */
+        .calendar-controls { display: flex; align-items: center; gap: 8px; }
+        .calendar-legend { display: flex; gap: 15px; margin-bottom: 15px; font-size: 12px; align-items: center; flex-wrap: wrap; }
+        .calendar-legend-swatch { width: 16px; height: 16px; border-radius: 3px; border: 1px solid #ddd; display: inline-block; vertical-align: middle; margin-right: 4px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-day-header { text-align: center; font-weight: 600; font-size: 11px; color: var(--dark-teal); padding: 6px 0; }
+        .calendar-day { aspect-ratio: 1; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; border: 1px solid #eee; position: relative; }
+        .calendar-day:hover { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1; }
+        .calendar-day.empty { background: transparent; border: none; cursor: default; }
+        .calendar-day.empty:hover { transform: none; box-shadow: none; }
+        .calendar-day .day-number { font-weight: 600; font-size: 13px; }
+        .calendar-day .day-count { font-size: 9px; opacity: 0.85; }
+        .calendar-day.green { background-color: #c8e6c9; color: #2e7d32; }
+        .calendar-day.yellow { background-color: #fff9c4; color: #f57f17; }
+        .calendar-day.orange { background-color: #ffe0b2; color: #e65100; }
+        .calendar-day.red { background-color: #ffcdd2; color: #c62828; }
+        .calendar-day.future { background-color: #f5f5f5; color: #bbb; cursor: default; border-color: #eee; }
+        .calendar-day.future:hover { transform: none; box-shadow: none; }
+        .calendar-day.today { border: 2px solid var(--primary-teal); }
+        .calendar-yearly { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .calendar-mini-month h4 { color: var(--dark-teal); margin-bottom: 4px; font-size: 12px; text-align: center; }
+        .calendar-mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .calendar-mini-header { font-size: 8px; text-align: center; color: #999; }
+        .calendar-mini-day { aspect-ratio: 1; border-radius: 2px; cursor: pointer; font-size: 8px; display: flex; align-items: center; justify-content: center; }
+        .calendar-mini-day.empty { background: transparent; cursor: default; }
+        .calendar-mini-day:hover:not(.empty) { outline: 1px solid var(--dark-teal); }
+        .calendar-weekly .calendar-day { aspect-ratio: auto; padding: 12px 8px; min-height: 70px; }
+        .calendar-streak { margin-top: 12px; font-size: 13px; color: #555; padding: 10px 15px; background: var(--light-gray); border-radius: 8px; }
+
         @media (max-width: 768px) {
             .header { padding: 15px 20px; }
             .nav-tabs { padding: 0 10px; }
@@ -459,6 +488,8 @@
             .container { padding: 15px; }
             .charts-grid { grid-template-columns: 1fr; }
             .resolution-form-content { flex-direction: column; }
+            .calendar-yearly { grid-template-columns: repeat(2, 1fr); }
+            .calendar-controls { flex-wrap: wrap; }
         }
 
         /* Loading Indicator */
@@ -882,6 +913,26 @@
                     <h3>Issues by Customer (Click for details)</h3>
                     <canvas id="customerChart"></canvas>
                 </div>
+            </div>
+
+            <!-- Issue Calendar Heatmap -->
+            <div class="card" style="margin-top: 25px;">
+                <div class="card-header">
+                    <h2>Issue Calendar</h2>
+                    <div class="calendar-controls">
+                        <button class="btn btn-sm btn-secondary" onclick="calendarPrev()" style="padding: 6px 12px;">&larr;</button>
+                        <span id="calendar-label" style="font-weight: 600; min-width: 180px; text-align: center; display: inline-block;"></span>
+                        <button class="btn btn-sm btn-secondary" onclick="calendarNext()" style="padding: 6px 12px;">&rarr;</button>
+                        <select id="calendar-view" onchange="renderCalendar()" style="margin-left: 15px; padding: 6px 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 13px;">
+                            <option value="monthly" selected>Monthly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="calendar-legend" class="calendar-legend"></div>
+                <div id="calendar-body"></div>
+                <div id="calendar-streak" class="calendar-streak"></div>
             </div>
         </div>
     </div>
@@ -3007,7 +3058,269 @@
             charts.customer.data.labels = topCust.map(c => c[0].length > 25 ? c[0].substring(0, 25) + '...' : c[0]);
             charts.customer.data.datasets[0].data = topCust.map(c => c[1]);
             charts.customer.update();
+
+            // Update calendar
+            renderCalendar();
         }
+
+        // ============ CALENDAR ============
+        let calendarDate = new Date();
+
+        function buildDateMap(filteredIssues) {
+            const map = {};
+            filteredIssues.forEach(function(issue) {
+                if (!issue.date) return;
+                // Normalize date to YYYY-MM-DD
+                var d = new Date(issue.date);
+                if (isNaN(d.getTime())) return;
+                var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+                if (!map[key]) map[key] = [];
+                map[key].push(issue);
+            });
+            return map;
+        }
+
+        function getColorClass(count) {
+            if (count === 0) return 'green';
+            if (count === 1) return 'yellow';
+            if (count <= 3) return 'orange';
+            return 'red';
+        }
+
+        function dateToKey(y, m, d) {
+            return y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        }
+
+        function isToday(y, m, d) {
+            var t = new Date();
+            return t.getFullYear() === y && t.getMonth() === m && t.getDate() === d;
+        }
+
+        function isFuture(y, m, d) {
+            var t = new Date(); t.setHours(0,0,0,0);
+            var check = new Date(y, m, d);
+            return check > t;
+        }
+
+        function renderCalendar() {
+            var filtered = getFilteredAnalyticsData();
+            var dateMap = buildDateMap(filtered);
+            var view = document.getElementById('calendar-view').value;
+
+            // Legend
+            document.getElementById('calendar-legend').innerHTML =
+                '<span><span class="calendar-legend-swatch" style="background:#c8e6c9;"></span> No issues</span>' +
+                '<span><span class="calendar-legend-swatch" style="background:#fff9c4;"></span> 1 issue</span>' +
+                '<span><span class="calendar-legend-swatch" style="background:#ffe0b2;"></span> 2-3 issues</span>' +
+                '<span><span class="calendar-legend-swatch" style="background:#ffcdd2;"></span> 4+ issues</span>' +
+                '<span><span class="calendar-legend-swatch" style="background:#f5f5f5; border: 2px solid var(--primary-teal);"></span> Today</span>';
+
+            if (view === 'monthly') renderMonthlyCalendar(dateMap);
+            else if (view === 'weekly') renderWeeklyCalendar(dateMap);
+            else renderYearlyCalendar(dateMap);
+
+            renderStreakInfo(dateMap);
+        }
+
+        function renderMonthlyCalendar(dateMap) {
+            var year = calendarDate.getFullYear();
+            var month = calendarDate.getMonth();
+            var label = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            document.getElementById('calendar-label').textContent = label;
+
+            var firstDay = new Date(year, month, 1).getDay();
+            var offset = (firstDay === 0) ? 6 : firstDay - 1; // Monday start
+            var daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            var html = '<div class="calendar-grid">';
+            var dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+            dayNames.forEach(function(d) { html += '<div class="calendar-day-header">' + d + '</div>'; });
+
+            for (var i = 0; i < offset; i++) html += '<div class="calendar-day empty"></div>';
+
+            for (var d = 1; d <= daysInMonth; d++) {
+                var key = dateToKey(year, month, d);
+                var count = dateMap[key] ? dateMap[key].length : 0;
+                var future = isFuture(year, month, d);
+                var today = isToday(year, month, d);
+                var cls = future ? 'future' : getColorClass(count);
+                if (today) cls += ' today';
+
+                html += '<div class="calendar-day ' + cls + '" onclick="showCalendarDayIssues(\'' + key + '\')" title="' + formatDate(key) + ': ' + count + ' issue' + (count !== 1 ? 's' : '') + '">';
+                html += '<span class="day-number">' + d + '</span>';
+                if (!future && count > 0) html += '<span class="day-count">' + count + '</span>';
+                html += '</div>';
+            }
+            html += '</div>';
+            document.getElementById('calendar-body').innerHTML = html;
+        }
+
+        function renderWeeklyCalendar(dateMap) {
+            var d = new Date(calendarDate);
+            var day = d.getDay();
+            var diff = (day === 0) ? -6 : 1 - day; // Monday
+            var monday = new Date(d);
+            monday.setDate(d.getDate() + diff);
+
+            var sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            var label = formatDate(dateToKey(monday.getFullYear(), monday.getMonth(), monday.getDate())) +
+                ' - ' + formatDate(dateToKey(sunday.getFullYear(), sunday.getMonth(), sunday.getDate()));
+            document.getElementById('calendar-label').textContent = label;
+
+            var html = '<div class="calendar-grid calendar-weekly">';
+            var dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+            dayNames.forEach(function(dn) { html += '<div class="calendar-day-header">' + dn + '</div>'; });
+
+            for (var i = 0; i < 7; i++) {
+                var current = new Date(monday);
+                current.setDate(monday.getDate() + i);
+                var y = current.getFullYear(), m = current.getMonth(), dd = current.getDate();
+                var key = dateToKey(y, m, dd);
+                var count = dateMap[key] ? dateMap[key].length : 0;
+                var future = isFuture(y, m, dd);
+                var today = isToday(y, m, dd);
+                var cls = future ? 'future' : getColorClass(count);
+                if (today) cls += ' today';
+
+                html += '<div class="calendar-day ' + cls + '" onclick="showCalendarDayIssues(\'' + key + '\')" title="' + count + ' issue' + (count !== 1 ? 's' : '') + '">';
+                html += '<span class="day-number">' + dd + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m] + '</span>';
+                if (!future) html += '<span class="day-count">' + count + ' issue' + (count !== 1 ? 's' : '') + '</span>';
+                html += '</div>';
+            }
+            html += '</div>';
+            document.getElementById('calendar-body').innerHTML = html;
+        }
+
+        function renderYearlyCalendar(dateMap) {
+            var year = calendarDate.getFullYear();
+            document.getElementById('calendar-label').textContent = year;
+
+            var html = '<div class="calendar-yearly">';
+            var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var dayHeaders = ['M','T','W','T','F','S','S'];
+
+            for (var m = 0; m < 12; m++) {
+                html += '<div class="calendar-mini-month"><h4>' + monthNames[m] + '</h4>';
+                html += '<div class="calendar-mini-grid">';
+                dayHeaders.forEach(function(dh) { html += '<div class="calendar-mini-header">' + dh + '</div>'; });
+
+                var firstDay = new Date(year, m, 1).getDay();
+                var offset = (firstDay === 0) ? 6 : firstDay - 1;
+                var daysInMonth = new Date(year, m + 1, 0).getDate();
+
+                for (var i = 0; i < offset; i++) html += '<div class="calendar-mini-day empty"></div>';
+
+                for (var d = 1; d <= daysInMonth; d++) {
+                    var key = dateToKey(year, m, d);
+                    var count = dateMap[key] ? dateMap[key].length : 0;
+                    var future = isFuture(year, m, d);
+                    var today = isToday(year, m, d);
+                    var cls = future ? 'future' : getColorClass(count);
+                    if (today) cls += ' today';
+
+                    html += '<div class="calendar-mini-day ' + cls + '" onclick="showCalendarDayIssues(\'' + key + '\')" title="' + monthNames[m] + ' ' + d + ': ' + count + '">' + d + '</div>';
+                }
+                html += '</div></div>';
+            }
+            html += '</div>';
+            document.getElementById('calendar-body').innerHTML = html;
+        }
+
+        function calendarPrev() {
+            var view = document.getElementById('calendar-view').value;
+            if (view === 'monthly') calendarDate.setMonth(calendarDate.getMonth() - 1);
+            else if (view === 'weekly') calendarDate.setDate(calendarDate.getDate() - 7);
+            else calendarDate.setFullYear(calendarDate.getFullYear() - 1);
+            renderCalendar();
+        }
+
+        function calendarNext() {
+            var view = document.getElementById('calendar-view').value;
+            if (view === 'monthly') calendarDate.setMonth(calendarDate.getMonth() + 1);
+            else if (view === 'weekly') calendarDate.setDate(calendarDate.getDate() + 7);
+            else calendarDate.setFullYear(calendarDate.getFullYear() + 1);
+            renderCalendar();
+        }
+
+        function renderStreakInfo(dateMap) {
+            var today = new Date(); today.setHours(0,0,0,0);
+            var streak = 0;
+            var d = new Date(today);
+            // Walk backward counting weekdays with 0 issues
+            for (var i = 0; i < 365; i++) {
+                var dow = d.getDay();
+                if (dow !== 0 && dow !== 6) { // weekday
+                    var key = dateToKey(d.getFullYear(), d.getMonth(), d.getDate());
+                    if (dateMap[key] && dateMap[key].length > 0) break;
+                    streak++;
+                }
+                d.setDate(d.getDate() - 1);
+            }
+
+            // Check if current week is issue-free (Mon-Fri)
+            var weekStart = new Date(today);
+            var dayOfWeek = weekStart.getDay();
+            var mondayDiff = (dayOfWeek === 0) ? -6 : 1 - dayOfWeek;
+            weekStart.setDate(weekStart.getDate() + mondayDiff);
+            var weekClean = true;
+            for (var i = 0; i < 5; i++) {
+                var wd = new Date(weekStart);
+                wd.setDate(weekStart.getDate() + i);
+                if (wd > today) break;
+                var wKey = dateToKey(wd.getFullYear(), wd.getMonth(), wd.getDate());
+                if (dateMap[wKey] && dateMap[wKey].length > 0) { weekClean = false; break; }
+            }
+
+            var html = '<strong>Current issue-free streak:</strong> ' + streak + ' weekday' + (streak !== 1 ? 's' : '');
+            if (weekClean && today.getDay() >= 1 && today.getDay() <= 5) {
+                html += ' &nbsp;|&nbsp; <span style="color: #2e7d32; font-weight: 600;">This week is issue-free so far!</span>';
+            }
+            document.getElementById('calendar-streak').innerHTML = html;
+        }
+
+        function showCalendarDayIssues(dateString) {
+            var filtered = getFilteredAnalyticsData();
+            var dayIssues = filtered.filter(function(i) {
+                if (!i.date) return false;
+                var d = new Date(i.date);
+                if (isNaN(d.getTime())) return false;
+                var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+                return key === dateString;
+            });
+
+            var modal = document.getElementById('issues-modal');
+            var modalTitle = document.getElementById('modal-title');
+            var modalBody = document.getElementById('modal-body');
+
+            modalTitle.textContent = 'Issues on ' + formatDate(dateString);
+
+            if (dayIssues.length === 0) {
+                modalBody.innerHTML = '<div style="text-align: center; padding: 30px;"><div style="font-size: 48px; margin-bottom: 10px;">&#10004;</div><h3 style="color: #2e7d32;">No issues on this date!</h3><p style="color: #666;">This day is issue-free.</p></div>';
+            } else {
+                modalBody.innerHTML = '<h4 style="color: #13614F; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #E8A83E;">' + dayIssues.length + ' issue' + (dayIssues.length !== 1 ? 's' : '') + ' on this date</h4>' +
+                    dayIssues.map(function(issue) {
+                        var modalDept = issue.department && issue.department !== 'Sales/Warehouse/Sheetmetal' && issue.department !== 'Sales/Warehouse' ? issue.department : getDepartmentFromConcern(issue.concern);
+                        var modalDeptClass = modalDept.toLowerCase();
+                        return '<div class="modal-issue-item ' + (issue.resolved === 'Yes' ? 'resolved' : '') + '">' +
+                            '<div class="modal-issue-header"><span class="dept-badge dept-' + modalDeptClass + '">' + modalDept + '</span><span class="status-' + (issue.resolved||'No').toLowerCase() + '">' + (issue.resolved||'No') + '</span></div>' +
+                            '<div class="modal-issue-details">' +
+                                '<div><span>Sales Order:</span> <strong>' + issue.salesOrder + '</strong></div>' +
+                                '<div><span>Customer:</span> <strong>' + issue.customerNumber + ' - ' + (issue.customerName || '-') + '</strong></div>' +
+                                '<div><span>Logged By:</span> <strong>' + (issue.loggedBy || issue.userId || '-') + '</strong></div>' +
+                                '<div><span>1st Responsible:</span> <strong>' + (issue.responsibleUser || issue.userId || '-') + '</strong></div>' +
+                                '<div><span>2nd Responsible:</span> <strong>' + (issue.responsibleUser2 || '-') + '</strong></div>' +
+                                '<div style="grid-column: 1 / -1;"><span>Concern:</span> <strong>' + issue.concern + '</strong></div>' +
+                            '</div>' +
+                            (issue.resolutionComment ? '<div class="modal-resolution-comment"><strong>Resolution Comment:</strong> ' + issue.resolutionComment + '</div>' : '') +
+                        '</div>';
+                    }).join('');
+            }
+
+            modal.classList.add('show');
+        }
+        // ============ END CALENDAR ============
 
         // Close modal on Escape key
         document.addEventListener('keydown', function(e) {
