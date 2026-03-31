@@ -224,8 +224,8 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
             margin-bottom: 25px;
         }
 
@@ -241,8 +241,8 @@
 
         .stat-card:hover { transform: scale(1.02); }
         .stat-card.gold { background: linear-gradient(135deg, var(--gold-accent), var(--gold-light)); }
-        .stat-card h3 { font-size: 32px; margin-bottom: 5px; }
-        .stat-card p { opacity: 0.9; font-size: 13px; }
+        .stat-card h3 { font-size: 26px; margin-bottom: 3px; }
+        .stat-card p { opacity: 0.9; font-size: 11px; }
 
         .filter-section {
             display: flex;
@@ -835,6 +835,10 @@
                     <h3 id="unique-customers">0</h3>
                     <p>Customers Affected (Click to view)</p>
                 </div>
+                <div class="stat-card gold" onclick="openCalendarModal()" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <h3 style="font-size: 22px;">&#128197;</h3>
+                    <p>Issue Calendar (Click to view)</p>
+                </div>
             </div>
 
             <div class="card">
@@ -872,10 +876,6 @@
                     <div class="form-group">
                         <label>User</label>
                         <select id="analytics-user" onchange="updateAnalytics()"></select>
-                    </div>
-                    <div class="form-group">
-                        <label>&nbsp;</label>
-                        <button onclick="openCalendarModal()" style="padding: 12px 15px; border: 2px solid var(--gold-accent); border-radius: 8px; font-size: 14px; font-family: inherit; background: var(--gold-accent); color: white; cursor: pointer; font-weight: 600; white-space: nowrap; transition: all 0.3s ease;">&#128197; Issue Calendar</button>
                     </div>
                 </div>
             </div>
