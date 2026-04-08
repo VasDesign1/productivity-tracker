@@ -1963,7 +1963,7 @@
                 loggedBy: form.querySelector('.form-logged-by').value,  // Who logged it
                 responsibleUser: responsibleUser,  // Who is responsible for the concern
                 responsibleUser2: responsibleUser2 || '',  // 2nd responsible person (optional)
-                userId: responsibleUser,  // Keep for backward compatibility
+                userId: form.querySelector('.form-logged-by').value,  // Mirror loggedBy so legacy fallbacks stay correct
                 concern: concern,
                 resolved: resolvedValue,
                 initialResolved: resolvedValue,  // Track how it was initially logged
