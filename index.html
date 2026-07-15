@@ -866,12 +866,21 @@
                     </div>
                     <div class="form-group">
                         <label>Time Period</label>
-                        <select id="analytics-period" onchange="updateAnalytics()">
+                        <select id="analytics-period" onchange="onAnalyticsPeriodChange()">
                             <option value="all">All Time</option>
                             <option value="week">This Week</option>
                             <option value="month">This Month</option>
                             <option value="year">This Year</option>
+                            <option value="custom">Custom Range</option>
                         </select>
+                    </div>
+                    <div class="form-group" id="analytics-custom-from-group" style="display: none;">
+                        <label>From Date</label>
+                        <input type="date" id="analytics-custom-from" onchange="updateAnalytics()">
+                    </div>
+                    <div class="form-group" id="analytics-custom-to-group" style="display: none;">
+                        <label>To Date</label>
+                        <input type="date" id="analytics-custom-to" onchange="updateAnalytics()">
                     </div>
                     <div class="form-group">
                         <label>User</label>
@@ -2850,6 +2859,24 @@
             }
         }
 
+        function issueDateKey(dateVal) {
+            if (!dateVal) return null;
+            var s = String(dateVal);
+            var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (m) return m[0];
+            var d = new Date(dateVal);
+            if (isNaN(d.getTime())) return null;
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+
+        function onAnalyticsPeriodChange() {
+            var period = document.getElementById('analytics-period').value;
+            var show = period === 'custom' ? '' : 'none';
+            document.getElementById('analytics-custom-from-group').style.display = show;
+            document.getElementById('analytics-custom-to-group').style.display = show;
+            updateAnalytics();
+        }
+
         function getFilteredAnalyticsData() {
             const branch = document.getElementById('analytics-branch').value;
             const dept = document.getElementById('analytics-department').value;
@@ -2889,6 +2916,12 @@
             if (period === 'week') filtered = filtered.filter(i => new Date(i.date) >= new Date(now - 7*24*60*60*1000));
             else if (period === 'month') filtered = filtered.filter(i => new Date(i.date) >= new Date(now.getFullYear(), now.getMonth(), 1));
             else if (period === 'year') filtered = filtered.filter(i => new Date(i.date) >= new Date(now.getFullYear(), 0, 1));
+            else if (period === 'custom') {
+                const fromVal = document.getElementById('analytics-custom-from').value;
+                const toVal = document.getElementById('analytics-custom-to').value;
+                if (fromVal) filtered = filtered.filter(i => { var k = issueDateKey(i.date); return k && k >= fromVal; });
+                if (toVal) filtered = filtered.filter(i => { var k = issueDateKey(i.date); return k && k <= toVal; });
+            }
 
             return filtered;
         }
@@ -3083,11 +3116,8 @@
         function buildDateMap(filteredIssues) {
             const map = {};
             filteredIssues.forEach(function(issue) {
-                if (!issue.date) return;
-                // Normalize date to YYYY-MM-DD
-                var d = new Date(issue.date);
-                if (isNaN(d.getTime())) return;
-                var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+                var key = issueDateKey(issue.date);
+                if (!key) return;
                 if (!map[key]) map[key] = [];
                 map[key].push(issue);
             });
@@ -3297,11 +3327,7 @@
         function showCalendarDayIssues(dateString) {
             var filtered = getFilteredAnalyticsData();
             var dayIssues = filtered.filter(function(i) {
-                if (!i.date) return false;
-                var d = new Date(i.date);
-                if (isNaN(d.getTime())) return false;
-                var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-                return key === dateString;
+                return issueDateKey(i.date) === dateString;
             });
 
             var modal = document.getElementById('issues-modal');
